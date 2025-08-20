@@ -1,12 +1,15 @@
+<script>
 document.addEventListener("DOMContentLoaded", () => {
   const textarea = document.getElementById("main-reply");
-  let userMap = {}; // Stores users by name: { "Name": { id, avatar } }
+  let userMap = {}; // { "Username": { id: "2", avatar: "..." } }
   let dropdown;
 
-  // Fetch users from /userlist.php and parse avatars/names
+  // Load users from /userlist.php with proper decoding
   fetch("/userlist.php")
-    .then(response => response.text())
-    .then(html => {
+    .then(response => response.arrayBuffer())
+    .then(buffer => {
+      const decoder = new TextDecoder("windows-1251");
+      const html = decoder.decode(buffer);
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, "text/html");
       const rows = doc.querySelectorAll("td.tcl.username");
@@ -14,40 +17,44 @@ document.addEventListener("DOMContentLoaded", () => {
       rows.forEach(td => {
         const nameLink = td.querySelector("span.usersname a");
         const avatarSpan = td.querySelector("em.user-avatar a");
+
         if (!nameLink || !avatarSpan) return;
 
         const name = nameLink.textContent.trim();
         const href = nameLink.getAttribute("href");
-        const idMatch = href.match(/profile\.php\?id=(\d+)/);
+        const match = href.match(/profile\.php\?id=(\d+)/);
         const avatarStyle = avatarSpan.querySelector("span.avatar-image")?.getAttribute("style") || "";
         const avatarMatch = avatarStyle.match(/url\(['"]?(.*?)['"]?\)/);
 
-        if (idMatch) {
+        if (match) {
           userMap[name] = {
-            id: idMatch[1],
+            id: match[1],
             avatar: avatarMatch ? avatarMatch[1] : "https://via.placeholder.com/32"
           };
         }
       });
 
-      // Post content parsing: replace @Name with a profile link
+      // Mention rendering in posts
       const posts = document.querySelectorAll(".post-box");
       posts.forEach(post => {
         Object.entries(userMap).forEach(([name, data]) => {
-          const mentionRegex = new RegExp(`(?<![\\w@])@${name.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')}(?![\\w])`, 'g');
-          post.innerHTML = post.innerHTML.replace(mentionRegex,
+          const escaped = name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'); // Escape special chars
+          const regex = new RegExp(`(?<![\\w@])@${escaped}(?![\\w])`, 'g');
+          post.innerHTML = post.innerHTML.replace(regex,
             `<a href="/profile.php?id=${data.id}" class="post-mention">@${name}</a>`
           );
         });
       });
-    });
+    })
+    .catch(err => console.error("Failed to fetch user list", err));
 
-  // Mention dropdown while typing
+  // Show mention dropdown in textarea on @
   if (textarea) {
     textarea.addEventListener("input", () => {
       const cursorPos = textarea.selectionStart;
       const textBeforeCursor = textarea.value.slice(0, cursorPos);
-      const atMatch = textBeforeCursor.match(/@([\S]*)$/u);
+      const atMatch = textBeforeCursor.match(/@([\w\u0400-\u04FF\s\-']*)$/); // Cyrillic + latin + spaces
+
       if (!atMatch || Object.keys(userMap).length === 0) {
         if (dropdown) dropdown.remove();
         return;
@@ -116,18 +123,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Hide dropdown on outside click
+  // Hide dropdown when clicking outside
   document.addEventListener("click", (e) => {
     if (dropdown && !dropdown.contains(e.target)) {
       dropdown.remove();
     }
   });
 
-  // Get coordinates of caret in textarea
+  // Calculate caret coordinates for dropdown positioning
   function getCaretCoordinates(el, pos) {
     const div = document.createElement("div");
     const style = getComputedStyle(el);
-
     for (const prop of style) {
       div.style[prop] = style[prop];
     }
@@ -153,3 +159,4 @@ document.addEventListener("DOMContentLoaded", () => {
     return { top, left };
   }
 });
+</script>
