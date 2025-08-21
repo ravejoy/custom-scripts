@@ -1,7 +1,54 @@
 // dice-script.js
 (function () {
-  if (window.__diceScriptLoaded) return;
-  window.__diceScriptLoaded = true;
+if (window.__diceScriptLoaded) return;
+window.__diceScriptLoaded = true;
+
+
+// === Insert modal and button dynamically ===
+document.addEventListener("DOMContentLoaded", () => {
+if (!document.getElementById('dice-modal')) {
+const modalHTML = `
+<div id="dice-modal" class="dice-modal-overlay" style="display:none;">
+<div class="dice-modal">
+<div class="close-btn" id="dice-close">×</div>
+<h2>🎲 Бросок кубиков</h2>
+
+
+<label>Грани первого кубика</label>
+<input type="number" id="dice-sides-1" min="2" max="1000" value="6" />
+
+
+<label>Грани второго кубика</label>
+<input type="number" id="dice-sides-2" min="2" max="1000" placeholder="Один кубик? Это поле не трогай" />
+
+
+<label>Грани третьего кубика</label>
+<input type="number" id="dice-sides-3" min="2" max="1000" placeholder="Если тебе надо" />
+
+
+<label>Бонус</label>
+<input type="number" id="dice-bonus" value="0" />
+
+
+<label>Причина броска <span style="font-weight: normal; color: #aaa;">(необязательно)</span></label>
+<textarea id="dice-reason" rows="2" placeholder="например: Защита от атаки Волдеморта"></textarea>
+
+
+<button type="button" id="dice-submit">Бросить</button>
+</div>
+</div>`;
+
+
+const triggerBtn = document.createElement('input');
+triggerBtn.type = 'button';
+triggerBtn.id = 'dice-trigger';
+triggerBtn.value = '🎲 Кинуть Дайс';
+
+
+document.body.insertAdjacentHTML('beforeend', modalHTML);
+document.body.appendChild(triggerBtn);
+}
+});
 
   const modal = document.getElementById('dice-modal');
   const openBtn = document.getElementById('dice-trigger');
