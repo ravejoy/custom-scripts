@@ -87,39 +87,69 @@ document.addEventListener("DOMContentLoaded", () => {
       dropdown.style.left = `${taRect.left + left}px`;
       dropdown.style.top = `${taRect.top + top + window.scrollY + 20}px`;
 
-      matches.forEach(name => {
-        const { id, avatar } = userMap[name];
+     matches.forEach(name => {
+const { id, avatar } = userMap[name];
 
-        const item = document.createElement("div");
-        item.style.display = "flex";
-        item.style.alignItems = "center";
-        item.style.cursor = "pointer";
-        item.style.padding = "4px";
-        item.style.gap = "8px";
 
-        const img = document.createElement("img");
-        img.src = avatar;
-        img.width = 24;
-        img.height = 24;
-        img.style.borderRadius = "50%";
+const item = document.createElement("div");
+item.style.display = "flex";
+item.style.alignItems = "center";
+item.style.cursor = "pointer";
+item.style.padding = "6px 10px";
+item.style.gap = "10px";
+item.style.transition = "background 0.2s ease-in-out";
+item.style.borderBottom = "1px solid #eee";
 
-        const span = document.createElement("span");
-        span.textContent = name;
 
-        item.appendChild(img);
-        item.appendChild(span);
-        item.addEventListener("click", () => {
-          textarea.value =
-            textarea.value.slice(0, atMatch.index) + "@" + name + " ";
-          textarea.focus();
-          dropdown.remove();
-        });
+item.addEventListener("mouseenter", () => {
+item.style.background = "#f0f0f0";
+});
+item.addEventListener("mouseleave", () => {
+item.style.background = "transparent";
+});
 
-        dropdown.appendChild(item);
-      });
 
-      document.body.appendChild(dropdown);
-    });
+const avatarWrapper = document.createElement("div");
+avatarWrapper.style.flexShrink = "0";
+avatarWrapper.style.width = "32px";
+avatarWrapper.style.height = "32px";
+avatarWrapper.style.borderRadius = "50%";
+avatarWrapper.style.overflow = "hidden";
+
+
+const img = document.createElement("img");
+img.src = avatar;
+img.style.width = "100%";
+img.style.height = "100%";
+img.style.objectFit = "cover";
+
+
+avatarWrapper.appendChild(img);
+
+
+const nameSpan = document.createElement("div");
+nameSpan.textContent = name;
+nameSpan.style.fontSize = "15px";
+nameSpan.style.fontWeight = "500";
+nameSpan.style.whiteSpace = "nowrap";
+nameSpan.style.overflow = "hidden";
+nameSpan.style.textOverflow = "ellipsis";
+
+
+item.appendChild(avatarWrapper);
+item.appendChild(nameSpan);
+
+
+item.addEventListener("click", () => {
+textarea.value =
+textarea.value.slice(0, atMatch.index) + "@" + name + " ";
+textarea.focus();
+dropdown.remove();
+});
+
+
+dropdown.appendChild(item);
+});
   }
 
   // Hide dropdown when clicking outside
