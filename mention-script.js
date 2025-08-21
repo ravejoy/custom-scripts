@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const textarea = document.getElementById("main-reply");
   let userMap = {}; // { "Username": { id: "2", avatar: "..." } }
   let dropdown;
+  let activeIndex = -1;
 
   // Load users from /userlist.php with proper decoding
   fetch("/userlist.php")
@@ -74,82 +75,100 @@ document.addEventListener("DOMContentLoaded", () => {
       dropdown.style.position = "absolute";
       dropdown.style.background = "#fff";
       dropdown.style.border = "1px solid #ccc";
-      dropdown.style.padding = "4px";
+      dropdown.style.padding = "4px 0";
       dropdown.style.zIndex = "9999";
-      dropdown.style.maxHeight = "200px";
+      dropdown.style.maxHeight = "250px";
       dropdown.style.overflowY = "auto";
       dropdown.style.fontSize = "14px";
-      dropdown.style.borderRadius = "4px";
-      dropdown.style.boxShadow = "0 4px 8px rgba(0,0,0,0.1)";
+      dropdown.style.borderRadius = "6px";
+      dropdown.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+      dropdown.style.minWidth = "180px";
 
       const { top, left } = getCaretCoordinates(textarea, textarea.selectionEnd);
       const taRect = textarea.getBoundingClientRect();
       dropdown.style.left = `${taRect.left + left}px`;
       dropdown.style.top = `${taRect.top + top + window.scrollY + 20}px`;
 
-     matches.forEach(name => {
-const { id, avatar } = userMap[name];
+      activeIndex = -1;
 
+      matches.forEach((name, index) => {
+        const { id, avatar } = userMap[name];
 
-const item = document.createElement("div");
-item.style.display = "flex";
-item.style.alignItems = "center";
-item.style.cursor = "pointer";
-item.style.padding = "6px 10px";
-item.style.gap = "10px";
-item.style.transition = "background 0.2s ease-in-out";
-item.style.borderBottom = "1px solid #eee";
+        const item = document.createElement("div");
+        item.style.display = "flex";
+        item.style.alignItems = "center";
+        item.style.cursor = "pointer";
+        item.style.padding = "6px 10px";
+        item.style.gap = "10px";
+        item.style.transition = "background 0.2s ease-in-out";
+        item.style.borderBottom = "1px solid #eee";
 
+        const setActive = (active) => {
+          item.style.background = active ? "#d6e0f5" : "transparent";
+        };
 
-item.addEventListener("mouseenter", () => {
-item.style.background = "#f0f0f0";
-});
-item.addEventListener("mouseleave", () => {
-item.style.background = "transparent";
-});
+        item.addEventListener("mouseenter", () => setActive(true));
+        item.addEventListener("mouseleave", () => setActive(false));
 
+        const img = document.createElement("img");
+        img.src = avatar;
+        img.width = 32;
+        img.height = 32;
+        img.style.borderRadius = "50%";
+        img.style.objectFit = "cover";
+        img.style.flexShrink = "0";
 
-const avatarWrapper = document.createElement("div");
-avatarWrapper.style.flexShrink = "0";
-avatarWrapper.style.width = "32px";
-avatarWrapper.style.height = "32px";
-avatarWrapper.style.borderRadius = "50%";
-avatarWrapper.style.overflow = "hidden";
+        const span = document.createElement("span");
+        span.textContent = name;
+        span.style.fontSize = "15px";
+        span.style.fontWeight = "500";
+        span.style.whiteSpace = "nowrap";
+        span.style.overflow = "hidden";
+        span.style.textOverflow = "ellipsis";
 
+        item.appendChild(img);
+        item.appendChild(span);
 
-const img = document.createElement("img");
-img.src = avatar;
-img.style.width = "100%";
-img.style.height = "100%";
-img.style.objectFit = "cover";
+        item.addEventListener("click", () => {
+          textarea.value =
+            textarea.value.slice(0, atMatch.index) + "@" + name + " ";
+          textarea.focus();
+          dropdown.remove();
+        });
 
+        dropdown.appendChild(item);
+      });
 
-avatarWrapper.appendChild(img);
+      document.body.appendChild(dropdown);
 
+      // Save reference to all items
+      const items = dropdown.querySelectorAll("div");
+      textarea.addEventListener("keydown", (e) => {
+        if (!dropdown || items.length === 0) return;
 
-const nameSpan = document.createElement("div");
-nameSpan.textContent = name;
-nameSpan.style.fontSize = "15px";
-nameSpan.style.fontWeight = "500";
-nameSpan.style.whiteSpace = "nowrap";
-nameSpan.style.overflow = "hidden";
-nameSpan.style.textOverflow = "ellipsis";
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          activeIndex = (activeIndex + 1) % items.length;
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          activeIndex = (activeIndex - 1 + items.length) % items.length;
+        } else if (e.key === "Enter") {
+          if (activeIndex >= 0 && activeIndex < items.length) {
+            e.preventDefault();
+            items[activeIndex].click();
+          }
+        } else if (e.key === "Escape") {
+          dropdown.remove();
+          return;
+        } else {
+          return;
+        }
 
-
-item.appendChild(avatarWrapper);
-item.appendChild(nameSpan);
-
-
-item.addEventListener("click", () => {
-textarea.value =
-textarea.value.slice(0, atMatch.index) + "@" + name + " ";
-textarea.focus();
-dropdown.remove();
-});
-
-
-dropdown.appendChild(item);
-});
+        items.forEach((el, i) => {
+          el.style.background = i === activeIndex ? "#d6e0f5" : "transparent";
+        });
+      });
+    });
   }
 
   // Hide dropdown when clicking outside
