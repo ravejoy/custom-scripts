@@ -1,0 +1,74 @@
+#dice-modal.dice-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#dice-modal .dice-modal {
+  background: #1b2b1e;
+  border: 2px solid #c9ac6b;
+  padding: 24px;
+  border-radius: 12px;
+  width: 400px;
+  max-width: 90%;
+  font-family: 'Georgia', serif;
+  color: #e6e6e6;
+  box-shadow: 0 0 20px rgba(0,0,0,0.8);
+  position: relative;
+  animation: fadeIn 0.3s ease-in-out;
+}
+#dice-modal .dice-modal h2 {
+  color: #e8d099;
+  text-align: center;
+  margin-bottom: 16px;
+}
+#dice-modal .dice-modal label {
+  display: block;
+  margin: 10px 0 5px;
+  font-weight: bold;
+  color: #bfbfbf;
+}
+#dice-modal .dice-modal input,
+#dice-modal .dice-modal textarea {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #2d3a2f;
+  color: #f2f2f2;
+  font-family: inherit;
+}
+#dice-modal .dice-modal button {
+  background-color: #3e4f3c;
+  color: #f5e7cb;
+  border: 1px solid #c9ac6b;
+  padding: 10px 20px;
+  border-radius: 8px;
+  margin-top: 16px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s ease;
+  width: 100%;
+}
+#dice-modal .dice-modal button:hover {
+  background-color: #4f614c;
+}
+#dice-modal .dice-modal .close-btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 18px;
+  color: #c9ac6b;
+  cursor: pointer;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.dice-result {
+  font-size: 10px;
+}
