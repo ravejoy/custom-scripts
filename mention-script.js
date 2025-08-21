@@ -1,12 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
   const textarea = document.getElementById("main-reply");
-  let userMap = {}; // { "Username": { id: "2", avatar: "..." } }
+  let userMap = {};
   let dropdown;
   let activeIndex = -1;
 
-  // Load users from /userlist.php with proper decoding
   fetch("/userlist.php")
-    .then(response => response.arrayBuffer())
+    .then(res => res.arrayBuffer())
     .then(buffer => {
       const decoder = new TextDecoder("windows-1251");
       const html = decoder.decode(buffer);
@@ -29,31 +28,29 @@ document.addEventListener("DOMContentLoaded", () => {
         if (match) {
           userMap[name] = {
             id: match[1],
-            avatar: avatarMatch ? avatarMatch[1] : "https://via.placeholder.com/32"
+            avatar: avatarMatch ? avatarMatch[1] : "https://via.placeholder.com/40"
           };
         }
       });
 
-      // Mention rendering in posts
+      // Replace mentions in posts
       const posts = document.querySelectorAll(".post-box");
       posts.forEach(post => {
         Object.entries(userMap).forEach(([name, data]) => {
-          const escaped = name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'); // Escape special chars
-          const regex = new RegExp(`(?<![\\w@])@${escaped}(?![\\w])`, 'g');
+          const escaped = name.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+          const regex = new RegExp(`(?<![\\w@])@${escaped}(?![\\w])`, "g");
           post.innerHTML = post.innerHTML.replace(regex,
             `<a href="/profile.php?id=${data.id}" class="post-mention">@${name}</a>`
           );
         });
       });
-    })
-    .catch(err => console.error("Failed to fetch user list", err));
+    });
 
-  // Show mention dropdown in textarea on @
   if (textarea) {
     textarea.addEventListener("input", () => {
       const cursorPos = textarea.selectionStart;
       const textBeforeCursor = textarea.value.slice(0, cursorPos);
-      const atMatch = textBeforeCursor.match(/@([\w\u0400-\u04FF\s\-']*)$/); // Cyrillic + latin + spaces
+      const atMatch = textBeforeCursor.match(/@([\w\u0400-\u04FF\s\-']*)$/);
 
       if (!atMatch || Object.keys(userMap).length === 0) {
         if (dropdown) dropdown.remove();
@@ -61,8 +58,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const prefix = atMatch[1].toLowerCase();
-      const matches = Object.keys(userMap).filter(name =>
-        name.toLowerCase().startsWith(prefix)
+      let matches = Object.keys(userMap).filter(name =>
+        name.toLowerCase().includes(prefix)
       );
 
       if (matches.length === 0) {
@@ -70,26 +67,32 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      // Сортування: спочатку ті, що починаються з префікса
+      matches.sort((a, b) => {
+        const aStart = a.toLowerCase().startsWith(prefix) ? 0 : 1;
+        const bStart = b.toLowerCase().startsWith(prefix) ? 0 : 1;
+        return aStart - bStart;
+      });
+
       if (dropdown) dropdown.remove();
       dropdown = document.createElement("div");
       dropdown.style.position = "absolute";
       dropdown.style.background = "#fff";
       dropdown.style.border = "1px solid #ccc";
-      dropdown.style.padding = "4px 0";
       dropdown.style.zIndex = "9999";
-      dropdown.style.maxHeight = "250px";
+      dropdown.style.maxHeight = "280px";
       dropdown.style.overflowY = "auto";
-      dropdown.style.fontSize = "14px";
-      dropdown.style.borderRadius = "6px";
-      dropdown.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
-      dropdown.style.minWidth = "180px";
+      dropdown.style.borderRadius = "8px";
+      dropdown.style.boxShadow = "0 8px 24px rgba(0,0,0,0.15)";
+      dropdown.style.minWidth = "240px";
+      dropdown.style.fontFamily = "system-ui, sans-serif";
 
       const { top, left } = getCaretCoordinates(textarea, textarea.selectionEnd);
       const taRect = textarea.getBoundingClientRect();
       dropdown.style.left = `${taRect.left + left}px`;
       dropdown.style.top = `${taRect.top + top + window.scrollY + 20}px`;
 
-      activeIndex = -1;
+      activeIndex = 0; // автоселект першого елемента
 
       matches.forEach((name, index) => {
         const { id, avatar } = userMap[name];
@@ -97,34 +100,37 @@ document.addEventListener("DOMContentLoaded", () => {
         const item = document.createElement("div");
         item.style.display = "flex";
         item.style.alignItems = "center";
+        item.style.gap = "12px";
+        item.style.padding = "10px 16px";
         item.style.cursor = "pointer";
-        item.style.padding = "6px 10px";
-        item.style.gap = "10px";
-        item.style.transition = "background 0.2s ease-in-out";
-        item.style.borderBottom = "1px solid #eee";
-
-        const setActive = (active) => {
-          item.style.background = active ? "#d6e0f5" : "transparent";
-        };
-
-        item.addEventListener("mouseenter", () => setActive(true));
-        item.addEventListener("mouseleave", () => setActive(false));
-
-        const img = document.createElement("img");
-        img.src = avatar;
-        img.width = 32;
-        img.height = 32;
-        img.style.borderRadius = "50%";
-        img.style.objectFit = "cover";
-        img.style.flexShrink = "0";
+        item.style.transition = "background 0.15s ease-in-out";
 
         const span = document.createElement("span");
-        span.textContent = name;
-        span.style.fontSize = "15px";
-        span.style.fontWeight = "500";
+        const lowerName = name.toLowerCase();
+        const matchStart = lowerName.indexOf(prefix);
+        if (matchStart !== -1) {
+          const before = name.slice(0, matchStart);
+          const match = name.slice(matchStart, matchStart + prefix.length);
+          const after = name.slice(matchStart + prefix.length);
+          span.innerHTML = `${before}<strong style="color:#5865F2">${match}</strong>${after}`;
+        } else {
+          span.textContent = name;
+        }
+
+        span.style.fontSize = "16px";
+        span.style.fontWeight = "600";
         span.style.whiteSpace = "nowrap";
         span.style.overflow = "hidden";
         span.style.textOverflow = "ellipsis";
+        span.style.color = "#000";
+
+        const img = document.createElement("img");
+        img.src = avatar;
+        img.style.width = "40px";
+        img.style.height = "40px";
+        img.style.borderRadius = "50%";
+        img.style.objectFit = "cover";
+        img.style.flexShrink = "0";
 
         item.appendChild(img);
         item.appendChild(span);
@@ -136,22 +142,43 @@ document.addEventListener("DOMContentLoaded", () => {
           dropdown.remove();
         });
 
+        item.addEventListener("mouseenter", () => {
+          activeIndex = index;
+          refreshHighlight();
+        });
+
         dropdown.appendChild(item);
       });
 
       document.body.appendChild(dropdown);
 
-      // Save reference to all items
       const items = dropdown.querySelectorAll("div");
+
+      function refreshHighlight() {
+        items.forEach((el, i) => {
+          const isActive = i === activeIndex;
+          el.style.background = isActive ? "#5865F2" : "transparent";
+          const textSpan = el.querySelector("span");
+          if (textSpan) textSpan.style.color = isActive ? "#fff" : "#000";
+        });
+        if (items[activeIndex]) {
+          items[activeIndex].scrollIntoView({ block: "nearest" });
+        }
+      }
+
+      refreshHighlight();
+
       textarea.addEventListener("keydown", (e) => {
         if (!dropdown || items.length === 0) return;
 
         if (e.key === "ArrowDown") {
           e.preventDefault();
           activeIndex = (activeIndex + 1) % items.length;
+          refreshHighlight();
         } else if (e.key === "ArrowUp") {
           e.preventDefault();
           activeIndex = (activeIndex - 1 + items.length) % items.length;
+          refreshHighlight();
         } else if (e.key === "Enter") {
           if (activeIndex >= 0 && activeIndex < items.length) {
             e.preventDefault();
@@ -159,33 +186,23 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         } else if (e.key === "Escape") {
           dropdown.remove();
-          return;
-        } else {
-          return;
         }
-
-        items.forEach((el, i) => {
-          el.style.background = i === activeIndex ? "#d6e0f5" : "transparent";
-        });
       });
     });
   }
 
-  // Hide dropdown when clicking outside
   document.addEventListener("click", (e) => {
     if (dropdown && !dropdown.contains(e.target)) {
       dropdown.remove();
     }
   });
 
-  // Calculate caret coordinates for dropdown positioning
   function getCaretCoordinates(el, pos) {
     const div = document.createElement("div");
     const style = getComputedStyle(el);
     for (const prop of style) {
       div.style[prop] = style[prop];
     }
-
     div.style.position = "absolute";
     div.style.visibility = "hidden";
     div.style.whiteSpace = "pre-wrap";
