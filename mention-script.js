@@ -1,4 +1,3 @@
-<script>
 document.addEventListener("DOMContentLoaded", () => {
   const textarea = document.getElementById("main-reply");
   let userMap = {}; // { "Username": { id: "2", avatar: "..." } }
@@ -159,4 +158,3 @@ document.addEventListener("DOMContentLoaded", () => {
     return { top, left };
   }
 });
-</script>
